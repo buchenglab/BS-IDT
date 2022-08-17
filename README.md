@@ -9,3 +9,12 @@ Recovering molecular information remains a grand challenge in the widely used ho
 
 This code was implemented in Matlab 2020a. When operating in other matlab versions, please be advised that some aspects of this code may not function as expected. 
 
+**Running the Code**
+1. Download this github repository to your computer.
+2. Download the example data from our [Google Drive](https://drive.google.com/drive/folders/15Jb9bYLUzktRw0cosDe07ZOzHYORQkt4?usp=sharing)
+3. Move the downloaded data to the 'data' folder within the same path as the BS-IDT code. 
+4. Download any additional matlab packages required for operating the code. 
+
+** Notes **
+
+This code utilizes the angle self-calibration code originally developed by [Laura Waller's Lab](https://github.com/Waller-Lab/Angle_SelfCalibration) with an additional nonlinear fitting algorithm developed in the work "High-speed *in vitro* intensity diffraction tomography" By Li and Matlock et al. This prior work was used as the baseline code for BS-IDT and can be found [here](https://github.com/bu-cisl/IDT-using-Annular-Illumination).
