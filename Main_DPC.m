@@ -5,16 +5,24 @@
 %
 %
 %   Purpose: This is an example reconstruction script for processing data
-%            obtained from the BS-DPC system. This code accepts "hot" and
+%            obtained using the synthetic Bond-selective differential phase
+%            contrast (BS-DPC) approach. This code accepts "hot" and
 %            "cold" raw intensity images at multiple illumination angles
 %            where the IR pump beam is on and off, respectively, and
-%            reconstructs a "hot" and "cold" refractive index (RI) volume
-%            of the sample. The difference of these volumes is then
-%            taken to recover the chemical signal from the object of
-%            interest. This code has been adapted primarily from the 
-%            annular IDT script originally published in the work 
-%            "High speed in vitro intensity diffraction tomography" by Li
-%            and Matlock et al. 
+%            synthesizes these single illumination images into half annular 
+%            circle illumination intensity images through summation. The
+%            difference of these asymmetric illumination images is taken
+%            and the DPC reconstruction approach described in "Quantitative
+%            differential phase contrast in an LED array microscope" by
+%            Tian and Waller. The end result provides three 2D phase images
+%            consisting of the object's 2D phase map with an active IR pump
+%            ("Hot" condition), the phase without the IR pump ("Cold"
+%            condition), and the phase difference between these phase maps.
+%            This third map provides the chemical signal information of the
+%            sample. We provide example datasets for the "no IR" case where
+%            no IR pump is applied to the sample, an IR illumination at
+%            1657cm^-1 sensitive to Amide protein bonds, and an IR
+%            illumination at 1745cm^-1 sensitive to lipid structures. 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 clc
@@ -55,7 +63,7 @@ Tau = 1; % DPC regularization parameter
 nAxes = 2;  % Select number of asymmetry axes to use
 
 % set toggles for calibrating illumination angle or using gpu
-Calib= 1; % 1 if calibrating the LED position, 0 if not
+Calib= 0; % 1 if calibrating the LED position, 0 if not
 gpu = 0;  % 1 if using gpu, 0 if not
 
 %% Step 1: Load measured intensity data and initial spectrum postion
@@ -105,5 +113,3 @@ eval Step3_GetDPC
 %% Save Results
 
 save([fnm '_recon_DPC.mat'],'Phi_hot','Phi_cold','Phi_diff','Calib','Tau');
-
-
