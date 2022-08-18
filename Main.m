@@ -52,8 +52,8 @@ fnm = 'Cells_1657cm-1';
 
 % Regularization values for IDT reconstruction
 Tau = [1.35e2, 1.35e2]; % Real and imaginary regularization parameters
-Depth_Set=[-10:10] * dz/n_Medium;  % Set reconstruction axial positions(um)
 dz=(lambda/(NA^2))/2;  % set microscope depth-of-field (um)
+Depth_Set=[-10:10] * dz/n_Medium;  % Set reconstruction axial positions(um)
 
 % set toggles for calibrating illumination angle or using gpu
 Calib= 0; % 1 if calibrating the LED position, 0 if not
