@@ -1,111 +1,112 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%
+%           Bond-Selective Differential Phase Contrast Script
+%
+%
+%   Purpose: This is an example reconstruction script for processing data
+%            obtained from the BS-DPC system. This code accepts "hot" and
+%            "cold" raw intensity images at multiple illumination angles
+%            where the IR pump beam is on and off, respectively, and
+%            reconstructs a "hot" and "cold" refractive index (RI) volume
+%            of the sample. The difference of these volumes is then
+%            taken to recover the chemical signal from the object of
+%            interest. This code has been adapted primarily from the 
+%            annular IDT script originally published in the work 
+%            "High speed in vitro intensity diffraction tomography" by Li
+%            and Matlock et al. 
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 clc
-clearvars
+clear all
 close all
 
+%% Add functions and utilities necessary for BS-DPC to the path
 addpath('functions')
 addpath('Utilities')
 
 %% Handle Declarations
-FT = @(x) fftshift(fft2(ifftshift(x)));
-iFT = @(x) fftshift(ifft2(ifftshift(x)));
+F = @(x) fftshift(fft2(ifftshift(x)));
+Ft = @(x) fftshift(ifft2(ifftshift(x)));
 
-%% Parameter
+%% Variable Initialization
 
-lambda=0.447; % Wavelength
-k=2*pi/lambda; % Wave number
+% Microscope parameters
+lambda=0.447; % Set imaging wavelength (um)
+NA=0.65;  % Microscope objective NA
+Mag=40;   % Microscope magnification
+Pixelsize=6.5/Mag;  % Set pixel size at object plane (um)
+Bright_Radius=10;  % LED ring radius
 
-NA=0.655;
-Mag=40;
-Pixelsize=6.5/Mag;
-n_Medium=1.34;
-dz = lambda./(NA.^2);
+% Imaging medium, image parameters
+n_Medium=1.34;  % Assumed imaging medium refractive index
+sz = [1024, 1024]; % set reconstructed image size
+cent = [1000, 1312];  % Set center point for image reconstruction
 
-Length_MN=32;% the number of LEDs
-
-Calib= 0; % if Calibrate LED postion
-gpu = 0;  % if using gpu
-Bright_Radius=10;% the Radius of LED ring
+k=2*pi/lambda; % Set image wavenumber
 fDL=Bright_Radius./tan(asin(NA));% the distance of LED and object 
 
-% Sorted_Pos = [360:-22.5:1];
-% Sorted_Pos = repelem(Sorted_Pos, 2);
-% Sorted_Pos = [cosd(Sorted_Pos'), sind(Sorted_Pos')];
-% Sorted_Pos = Sorted_Pos';
+% File name for processing
+fnm = 'Cells_1657cm-1';
+
+% Regularization values for IDT reconstruction
+Tau = 1; % DPC regularization parameter
+
+% set toggles for calibrating illumination angle or using gpu
+Calib= 0; % 1 if calibrating the LED position, 0 if not
+gpu = 0;  % 1 if using gpu, 0 if not
+
 %% Step Load measured intensity data and initial spectrum postion
 
-genfol = 'K:\BU\Data\LIDT\BC_Mitotic\';  % 'D:\BU\Data\LIDT\Rich_Lipid_img\';  %  
-prefix = '210424_Mitotic_1';  % '210609_BCancerImg';
-suffix = 'acq-crop-precal';
-avg = 60;
-wvlngth = {'noIR'};
-illum_idx = [1:32];
+% Load Data
+load([cd '\data\' fnm '.mat'], 'img', 'iNA', 'Sorted_Pos');
+Length_MN = size(iNA, 1);  % Obtain total number of illuminations
 
-% Load data
-tmpnm = [genfol, prefix,'_', wvlngth{1}, '_av', num2str(avg),'_',suffix];
-tmpfol = dir(tmpnm);
-dat_fol = [tmpnm, '\', tmpfol(3).name, '\'];
-load([dat_fol 'IDT_Data_pls600.mat'], 'img', 'iNA');
-
-I_Raw = img(:,:,illum_idx);
-
-% Normalize image without background subtraction
-I_Raw = BkgndNorm(I_Raw, false) + 1; 
-
-% Crop image down
-cent = [996, 1302];  %[855, 1015]; %[801, 801]; %[1000, 1312]; %[1164, 1356];%%[1028, 1293]; %Center:  %Size: 2160 x 2560
-sz = [1024, 1024];
-I_Raw = I_Raw(cent(1) - sz(1)/2:cent(1) + sz(1)/2 - 1,...
+% Crop raw images to desired reconstruction size
+I_Raw = img(cent(1) - sz(1)/2:cent(1) + sz(1)/2 - 1,...
           cent(2) - sz(2)/2:cent(2) + sz(2)/2 - 1,:); 
+
+
+% Normalize image without removing background signal
+I_Raw = BkgndNorm(I_Raw, false) + 1; 
+clear img
 
 % Convert iNA to spatial frequencies, correct 
 iNA = -iNA/lambda;
+if(Calib == 0)
+    iNA = [iNA(:,1), -iNA(:,2)];
+end
 
-Cablib_Nx=256;
-Cablib_Ny=256;
+% Set window size for illumination angle calibration
+Calib_Nx=sz(1);  
+Calib_Ny=sz(2);
+Calib_pointX=sz(1)/2+1;  
+Calib_pointY=sz(2)/2+1;
 
-Cablib_pointX=513;  
-Cablib_pointY=513;
-% Sorted_Pos = Sorted_Pos';
-eval Step0_IDT_Init_v2
+eval Step1_IDT_Init
 
-%% Step Implete the calibation of LED postion
+%% Step 2: Implement LED calibration
 
  if Calib==1
-    eval Step1_IDT_Calib
+    eval Step2_IDT_Calib
+ else
+     disp('Skipping Step 2: Angle Calibration...')
  end
  
-%% Implete the IDT
-Alpha=[1];
-
+%% Step 3: Implement DPC reconstruction algorithm
+disp('Step 3: Applying DPC reconstruction...')
 nAxes = 2;  % Select number of asymmetry axes to use
-dat_fol = [dat_fol 'Reprocessed_Results\'];
-mkdir(dat_fol);
-for nA = 1:length(Alpha)
-    disp(['Processing ' num2str(Alpha(nA)) ' Regularization...']);
-    % Reassign angles, Illum quantity to prevent shrinkage in getDPC script
-    Length_MN=32;
-    Ini_NAx = iNA(:,1);
-    Ini_NAy = iNA(:,2);
-    
-    % Process hot and cold measurements, take difference
-    eval Step2_GetDPC_v2
 
-    %% Save Results
+% Reassign angles, Illum. quantity to prevent shrinkage in getDPC script
+Length_MN=32;
+Ini_NAx = iNA(:,1);
+Ini_NAy = iNA(:,2);
 
-    hotfile = Tiff([dat_fol 'DPC_inv_hot_Tau' num2str(Alpha(nA)) '_cal' num2str(Calib) '.tiff'],'w');
-    writeTiff_32bGray(hotfile, V_hot);
-    coldfile = Tiff([dat_fol 'DPC_inv_cold_Tau' num2str(Alpha(nA)) '_cal' num2str(Calib) '.tiff'],'w');
-    writeTiff_32bGray(coldfile, V_cold);
-    difffile = Tiff([dat_fol 'DPC_inv_diff_Tau' num2str(Alpha(nA)) '_cal' num2str(Calib) '.tiff'],'w');
-    writeTiff_32bGray(difffile, V_diff);
-    hotfile = Tiff([dat_fol 'DPC_inv_hot_RI_Tau' num2str(Alpha(nA)) '_cal' num2str(Calib) '.tiff'],'w');
-    writeTiff_32bGray(hotfile, RI_hot);
-    coldfile = Tiff([dat_fol 'DPC_inv_cold_RI_Tau' num2str(Alpha(nA)) '_cal' num2str(Calib) '.tiff'],'w');
-    writeTiff_32bGray(coldfile, RI_cold);
-    difffile = Tiff([dat_fol 'DPC_inv_diff_RI_Tau' num2str(Alpha(nA)) '_cal' num2str(Calib) '.tiff'],'w');
-    writeTiff_32bGray(difffile, diffRI);
+% Process hot and cold measurements, take difference
+eval Step3_GetDPC
 
-    save([dat_fol 'Recon_DPC_inv_Tau' num2str(Alpha(nA)) '_cal' num2str(Calib) '.mat'],'V_hot','V_cold','V_diff','RI_hot','RI_cold','diffRI','Calib');
-end
+%% Save Results
+
+save(['Reconstruction_DPC.mat'],'V_hot','V_cold','V_diff','Calib','Tau');
 
 

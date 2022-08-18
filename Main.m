@@ -59,8 +59,7 @@ gpu = 0;  % 1 if using gpu, 0 if not
 
 %% Step 1: Load measured intensity data and initial spectrum postion
 
-  % Set file name for data to process
-
+% Load Data
 load([cd '\data\' fnm '.mat'], 'img', 'iNA', 'Sorted_Pos');
 Length_MN = size(iNA, 1);  % Obtain total number of illuminations
 
