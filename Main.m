@@ -33,7 +33,7 @@ Ft = @(x) fftshift(ifft2(ifftshift(x)));
 %% Variable Intialization
 
 % Microscope parameters
-lambda=0.447; % Set imaging wavelength (um)
+lambda=0.447;  % Set imaging wavelength (um)
 NA=0.65;  % Microscope objective NA
 Mag=40;   % Microscope magnification
 Pixelsize=6.5/Mag;  % Set pixel size at object plane (um)
@@ -52,6 +52,8 @@ fnm = 'Cells_1657cm-1';
 
 % Regularization values for IDT reconstruction
 Tau = [1.35e2, 1.35e2]; % Real and imaginary regularization parameters
+Depth_Set=[-10:10] * dz/n_Medium;  % Set reconstruction axial positions(um)
+dz=(lambda/(NA^2))/2;  % set microscope depth-of-field (um)
 
 % set toggles for calibrating illumination angle or using gpu
 Calib= 0; % 1 if calibrating the LED position, 0 if not
@@ -94,8 +96,7 @@ eval Step1_IDT_Init
  end
  
 %% Step 3: Perform IDT reconstructions
-dz=(lambda/(NA^2))/2;
-Depth_Set=[-10:10] * dz/n_Medium;
+
 
 % Process hot and cold measurements, take difference
 eval Step3_IDT_Poss
@@ -104,6 +105,6 @@ eval Step3_IDT_Poss
 RI_diff = real(RI_hot) - real(RI_cold);
 
 %% Step 4: Save Results
-save(['Reconstruction.mat'],'RI_hot','RI_cold','RI_diff','Calib','Tau','-v7.3');
+save([fnm '_recon_BSIDT.mat'],'RI_hot','RI_cold','RI_diff','Calib','Tau','-v7.3');
    
 

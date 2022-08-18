@@ -27,17 +27,19 @@ function [imDPC,idx,imTop,imBot] = applyDPC_Gen(imSet,iNA,rNA,thStep)
 %-------------------------------------------------------------------------%
 
 
-
 %Calculate radial NA
 iNA(:,3) = sqrt(iNA(:,1).^2 + iNA(:,2).^2);
 
 %Calculate angle for illuminations
 ang = round(atan2(iNA(:,1),iNA(:,2)),2);
 
-%Remove any angles with values of pi or -pi
-% ang(abs(ang) == 3.14) = 0;
+% Calculate average angular stepsize for annular illumination grid
+for q = 1:length(ang)-1
+    dtheta(q) = ang(q+1) - ang(q);
+end
+dtheta = abs(median(dtheta));
 
-%Number of DPC images to generate
+%Number of DPC image sets to generate
 nDPC = round(pi / thStep);
 
 %Preallocate DPC image stack
@@ -61,22 +63,22 @@ for k = 1:size(imSet,3)
             %Checks if image uses illumination from upper or lower quadrant
             if(sign(ang(k)) == 1)
                 val = round((q-1)*thStep,2);
-                if((ang(k)-val) > 0)
-                    if(q == 1 && ang(k) == 3.14)
-                    else
+                if((ang(k)-val) > dtheta/2 && (ang(k)-val) < (pi - dtheta/2))
+%                     if(q == 1 && ang(k) >= pi - dtheta/2 && ang(k) <= pi + dtheta/2)
+%                     else
                         idx(k,2*q-1) = k;
                         imTop(:,:,q) = imTop(:,:,q) + imSet(:,:,k);
-                    end
-                elseif((ang(k)-val) < 0)
+%                     end
+                elseif((ang(k)-val) < -dtheta/2)
                     idx(k,2*q) = k;
                     imBot(:,:,q) = imBot(:,:,q) + imSet(:,:,k);                   
                 end
             elseif(sign(ang(k)) == -1)
                 val = round(pi - thStep*(q-1),2);
-                if((abs(ang(k)) - val) > 0)
+                if((abs(ang(k)) - val) > dtheta/2 && (ang(k)-val) < (pi - dtheta/2))
                     idx(k,2*q-1) = k;
                     imTop(:,:,q) = imTop(:,:,q) + imSet(:,:,k);                    
-                elseif((abs(ang(k)) - val) < 0)
+                elseif((abs(ang(k)) - val) < -dtheta/2)
                     idx(k,2*q) = k;
                     imBot(:,:,q) = imBot(:,:,q) + imSet(:,:,k);  
                 end

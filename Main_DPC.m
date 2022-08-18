@@ -22,8 +22,9 @@ clear all
 close all
 
 %% Add functions and utilities necessary for BS-DPC to the path
-addpath('functions')
-addpath('Utilities')
+addpath('functions');
+addpath('Utilities');
+addpath('data');
 
 %% Handle Declarations
 F = @(x) fftshift(fft2(ifftshift(x)));
@@ -47,25 +48,26 @@ k=2*pi/lambda; % Set image wavenumber
 fDL=Bright_Radius./tan(asin(NA));% the distance of LED and object 
 
 % File name for processing
-fnm = 'Cells_1657cm-1';
+fnm = 'Cells_1745cm-1';
 
-% Regularization values for IDT reconstruction
+% Processing parameters for inversion
 Tau = 1; % DPC regularization parameter
+nAxes = 2;  % Select number of asymmetry axes to use
 
 % set toggles for calibrating illumination angle or using gpu
-Calib= 0; % 1 if calibrating the LED position, 0 if not
+Calib= 1; % 1 if calibrating the LED position, 0 if not
 gpu = 0;  % 1 if using gpu, 0 if not
 
-%% Step Load measured intensity data and initial spectrum postion
+%% Step 1: Load measured intensity data and initial spectrum postion
 
 % Load Data
 load([cd '\data\' fnm '.mat'], 'img', 'iNA', 'Sorted_Pos');
+% iNA = iNA_orig;
 Length_MN = size(iNA, 1);  % Obtain total number of illuminations
 
 % Crop raw images to desired reconstruction size
 I_Raw = img(cent(1) - sz(1)/2:cent(1) + sz(1)/2 - 1,...
-          cent(2) - sz(2)/2:cent(2) + sz(2)/2 - 1,:); 
-
+          cent(2) - sz(2)/2:cent(2) + sz(2)/2 - 1, :); 
 
 % Normalize image without removing background signal
 I_Raw = BkgndNorm(I_Raw, false) + 1; 
@@ -73,9 +75,6 @@ clear img
 
 % Convert iNA to spatial frequencies, correct 
 iNA = -iNA/lambda;
-if(Calib == 0)
-    iNA = [iNA(:,1), -iNA(:,2)];
-end
 
 % Set window size for illumination angle calibration
 Calib_Nx=sz(1);  
@@ -94,8 +93,6 @@ eval Step1_IDT_Init
  end
  
 %% Step 3: Implement DPC reconstruction algorithm
-disp('Step 3: Applying DPC reconstruction...')
-nAxes = 2;  % Select number of asymmetry axes to use
 
 % Reassign angles, Illum. quantity to prevent shrinkage in getDPC script
 Length_MN=32;
@@ -107,6 +104,6 @@ eval Step3_GetDPC
 
 %% Save Results
 
-save(['Reconstruction_DPC.mat'],'V_hot','V_cold','V_diff','Calib','Tau');
+save([fnm '_recon_DPC.mat'],'Phi_hot','Phi_cold','Phi_diff','Calib','Tau');
 
 
