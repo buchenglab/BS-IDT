@@ -1,5 +1,5 @@
 # BS-IDT
-This is the github repository for the paper **Bond-selective intensity diffraction tomography**. This repository includes the codes and links to example data for implementing the BS-IDT method.  
+This is the github repository for the paper **Bond-selective intensity diffraction tomography** located [here](https://arxiv.org/abs/2203.13630). This repository includes the codes and links to example data for implementing the BS-IDT method.
 
 **Abstract**
 
@@ -21,3 +21,5 @@ There are two main scripts for this system. The first, Main.m, runs the BS-IDT r
 ** Notes **
 
 This code utilizes the angle self-calibration code originally developed by [Laura Waller's Lab](https://github.com/Waller-Lab/Angle_SelfCalibration) with an additional nonlinear fitting algorithm developed in the work "High-speed *in vitro* intensity diffraction tomography" By Li and Matlock et al. This prior work was used as the baseline code for BS-IDT and can be found [here](https://github.com/bu-cisl/IDT-using-Annular-Illumination).
+
+
