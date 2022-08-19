@@ -1,5 +1,5 @@
 # BS-IDT
-This is the github repository for the paper **Bond-selective intensity diffraction tomography** located [here](https://arxiv.org/abs/2203.13630). This repository includes the codes and links to example data for implementing the BS-IDT method.
+This is the github repository for the paper [**Bond-selective intensity diffraction tomography**](https://arxiv.org/abs/2203.13630). This repository includes the codes and links to example data for implementing the BS-IDT method.
 
 **Abstract**
 
